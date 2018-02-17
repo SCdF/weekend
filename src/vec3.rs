@@ -13,8 +13,7 @@ pub struct Vec3 {
 #[allow(dead_code)]
 impl Vec3 {
     pub fn squared_length(&self) -> f32 {
-        // TODO: work out how to just call dot
-        self.x * self.x + self.y * self.y + self.z * self.z
+        Vec3::dot(&self, &self)
     }
     pub fn length(&self) -> f32 {
         self.squared_length().sqrt()
@@ -29,9 +28,8 @@ impl Vec3 {
             z: self.z * k,
         }
     }
-    // TODO: get this working
     pub fn unit_vector(&self) -> Vec3 {
-        self / self.length()
+        *self / self.length()
     }
 
     // TODO: read about dot product
@@ -119,17 +117,6 @@ impl Div<f32> for Vec3 {
     type Output = Vec3;
 
     fn div(self, t: f32) -> Vec3 {
-        Vec3 {
-            x: self.x / t,
-            y: self.y / t,
-            z: self.z / t,
-        }
-    }
-}
-impl<'a> Div<f32> for &'a Vec3 {
-    type Output = Vec3;
-
-    fn div(self: &'a Vec3, t: f32) -> Vec3 {
         Vec3 {
             x: self.x / t,
             y: self.y / t,
