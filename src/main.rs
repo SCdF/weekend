@@ -1,6 +1,3 @@
-// TODO: understand why I have to use these before I mod them
-//   I didn't have to do this when there was just one import: Vec3. Once I added
-//   Ray mod by itself was no longer good enough
 use ::vec3::Vec3;
 use ::ray::Ray;
 mod vec3;
@@ -21,7 +18,7 @@ fn main() {
     let horizontal = Vec3 {x: 4.0, y: 0.0, z: 0.0};
     let vertical = Vec3 {x: 0.0, y: 2.0, z: 0.0};
     let origin = Vec3 {x: 0.0, y: 0.0, z: 0.0};
-    for j in (0..ny - 1).rev() {
+    for j in (0..ny).rev() {
         for i in 0..nx {
             let u = i as f32 / nx as f32;
             let v = j as f32 / ny as f32;
