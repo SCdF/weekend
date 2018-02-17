@@ -21,7 +21,7 @@ fn main() {
     let horizontal = Vec3 {x: 4.0, y: 0.0, z: 0.0};
     let vertical = Vec3 {x: 0.0, y: 2.0, z: 0.0};
     let origin = Vec3 {x: 0.0, y: 0.0, z: 0.0};
-    for j in 0..ny - 1 {
+    for j in (0..ny - 1).rev() {
         for i in 0..nx {
             let u = i as f32 / nx as f32;
             let v = j as f32 / ny as f32;
