@@ -12,6 +12,7 @@ struct Vec3 {
 
 // TODO: work out the difference between Vec3 and &Vec3: when would I want to use
 // one over the other, how should I re-write this code to use those properly
+#[allow(dead_code)]
 impl Vec3 {
     fn squared_length(&self) -> f32 {
         // TODO: work out how to just call dot
@@ -146,12 +147,14 @@ fn main() {
     println!("P3\n{} {} \n255\n", nx, ny);
     for j in 0..ny - 1 {
         for i in 0..nx {
-            let r = i as f64 / nx as f64;
-            let g = j as f64 / ny as f64;
-            let b = 0.2;
-            let ir = (255.99 * r) as i32;
-            let ig = (255.99 * g) as i32;
-            let ib = (255.99 * b) as i32;
+            let col = Vec3 {
+                x: i as f32 / nx as f32,
+                y: j as f32 / ny as f32,
+                z: 0.2
+            };
+            let ir = (255.99 * col.x) as i32;
+            let ig = (255.99 * col.y) as i32;
+            let ib = (255.99 * col.z) as i32;
             println!("{} {} {}\n", ir, ig, ib);
         }
     }
