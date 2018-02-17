@@ -1,6 +1,7 @@
+// TODO: convert to f64 because why not
 use std::ops::{Add, Div, Mul, Sub};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -11,16 +12,16 @@ pub struct Vec3 {
 // one over the other, how should I re-write this code to use those properly
 #[allow(dead_code)]
 impl Vec3 {
-    fn squared_length(&self) -> f32 {
+    pub fn squared_length(&self) -> f32 {
         // TODO: work out how to just call dot
         self.x * self.x + self.y * self.y + self.z * self.z
     }
-    fn length(&self) -> f32 {
+    pub fn length(&self) -> f32 {
         self.squared_length().sqrt()
     }
 
     // TODO: understand the difference between make_unit_vector and unit_vector
-    fn make_unit_vector(&self) -> Vec3 {
+    pub fn make_unit_vector(&self) -> Vec3 {
         let k = 1.0 / self.length();
         Vec3 {
             x: self.x * k,
@@ -29,17 +30,17 @@ impl Vec3 {
         }
     }
     // TODO: get this working
-    // fn unit_vector(&self) -> Vec3 {
-    //     *self / self.length()
-    // }
+    pub fn unit_vector(&self) -> Vec3 {
+        self / self.length()
+    }
 
     // TODO: read about dot product
-    fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
+    pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
     }
 
     // TODO: read about cross product
-    fn cross(v1: &Vec3, v2: &Vec3) -> Vec3 {
+    pub fn cross(v1: &Vec3, v2: &Vec3) -> Vec3 {
         Vec3 {
             x: v1.y * v2.z - v1.z * v1.y,
             y: -(v1.x * v2.z - v1.z + v2.x),
@@ -118,6 +119,17 @@ impl Div<f32> for Vec3 {
     type Output = Vec3;
 
     fn div(self, t: f32) -> Vec3 {
+        Vec3 {
+            x: self.x / t,
+            y: self.y / t,
+            z: self.z / t,
+        }
+    }
+}
+impl<'a> Div<f32> for &'a Vec3 {
+    type Output = Vec3;
+
+    fn div(self: &'a Vec3, t: f32) -> Vec3 {
         Vec3 {
             x: self.x / t,
             y: self.y / t,
