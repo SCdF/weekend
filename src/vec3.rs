@@ -12,11 +12,21 @@ pub struct Vec3 {
 // one over the other, how should I re-write this code to use those properly
 #[allow(dead_code)]
 impl Vec3 {
+    // TODO: read about dot product
+    pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+    }
+
     pub fn squared_length(&self) -> f32 {
         Vec3::dot(&self, &self)
     }
+
     pub fn length(&self) -> f32 {
         self.squared_length().sqrt()
+    }
+
+    pub fn unit_vector(&self) -> Vec3 {
+        *self / self.length()
     }
 
     // TODO: understand the difference between make_unit_vector and unit_vector
@@ -27,14 +37,6 @@ impl Vec3 {
             y: self.y * k,
             z: self.z * k,
         }
-    }
-    pub fn unit_vector(&self) -> Vec3 {
-        *self / self.length()
-    }
-
-    // TODO: read about dot product
-    pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
-        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
     }
 
     // TODO: read about cross product
