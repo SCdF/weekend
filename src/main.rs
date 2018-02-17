@@ -7,15 +7,20 @@ fn color(ray: &Ray) -> Vec3 {
     let unit_direction = ray.direction.unit_vector();
     let t = 0.5 * (unit_direction.y + 1.0);
 
-    (1.0 - t) * Vec3 {
+    // eprintln!("{} {}", unit_direction.y, t);
+
+    let white = Vec3 {
         x: 1.0,
         y: 1.0,
         z: 1.0,
-    } + t * Vec3 {
+    };
+    let blue = Vec3 {
         x: 0.5,
         y: 0.7,
         z: 1.0,
-    }
+    };
+
+    (1.0 - t) * white + t * blue
 }
 
 fn main() {
@@ -50,7 +55,7 @@ fn main() {
                 origin,
                 direction: lower_left_corner + u * horizontal + v * vertical,
             };
-            eprintln!("{}\t{}\t{:?}", u, v, r);
+            // eprintln!("{}\t{}\t{:?}", u, v, r);
             let col = color(&r);
             let ir = (255.99 * col.x) as i32;
             let ig = (255.99 * col.y) as i32;

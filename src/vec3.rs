@@ -2,6 +2,9 @@
 use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Debug, Copy, Clone)]
+// TODO refactor Vec3 into just a tuple.
+// xyz doesn't always make sense, let's not name them, it makes the code more
+// confusing
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
