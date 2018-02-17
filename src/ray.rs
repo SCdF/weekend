@@ -1,9 +1,9 @@
-use ::vec3::Vec3;
+use vec3::Vec3;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Ray {
     pub origin: Vec3,
-    pub direction: Vec3
+    pub direction: Vec3,
 }
 
 #[allow(dead_code)]
@@ -14,7 +14,7 @@ impl Ray {
         Vec3 {
             x: nv.x,
             y: nv.y,
-            z: nv.z
+            z: nv.z,
         }
     }
 }

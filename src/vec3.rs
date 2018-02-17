@@ -14,7 +14,7 @@ pub struct Vec3 {
 impl Vec3 {
     // TODO: read about dot product
     pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
-        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+        (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z)
     }
 
     pub fn squared_length(&self) -> f32 {
