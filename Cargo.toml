@@ -1,0 +1,6 @@
+[package]
+name = "weekend"
+version = "0.1.0"
+authors = ["Stefan du Fresne <stefan@sdufresne.info>"]
+
+[dependencies]
