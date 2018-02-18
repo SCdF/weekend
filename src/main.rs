@@ -1,12 +1,18 @@
+extern crate rand;
+
 mod vec3;
 mod ray;
 mod hitable;
+mod camera;
+
+use rand::distributions::{IndependentSample, Range};
 
 use vec3::Vec3;
 use ray::Ray;
 use hitable::Hitable;
 use hitable::HitableList;
 use hitable::Sphere;
+use camera::Camera;
 
 fn color(ray: &Ray, world: &Hitable) -> Vec3 {
     match world.hit(*ray, 0.0, std::f32::MAX) {
@@ -40,26 +46,32 @@ fn color(ray: &Ray, world: &Hitable) -> Vec3 {
 fn main() {
     let nx = 200;
     let ny = 100;
+    let aa_samples = 100;
+
     println!("P3\n{} {} \n255\n", nx, ny);
-    let lower_left_corner = Vec3 {
-        x: -2.0,
-        y: -1.0,
-        z: -1.0,
-    };
-    let horizontal = Vec3 {
-        x: 4.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    let vertical = Vec3 {
-        x: 0.0,
-        y: 2.0,
-        z: 0.0,
-    };
-    let origin = Vec3 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
+
+    let cam = Camera {
+        lower_left_corner: Vec3 {
+            x: -2.0,
+            y: -1.0,
+            z: -1.0,
+        },
+        horizontal: Vec3 {
+            x: 4.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        vertical: Vec3 {
+            x: 0.0,
+            y: 2.0,
+            z: 0.0,
+        },
+        origin: Vec3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+
     };
 
     let world = &HitableList {
@@ -83,17 +95,28 @@ fn main() {
         ]
     };
 
+    let step = Range::new(0.0, 1.0);
+    let mut rng = rand::thread_rng();
+
     for j in (0..ny).rev() {
         for i in 0..nx {
-            let u = i as f32 / nx as f32;
-            let v = j as f32 / ny as f32;
-            let r = Ray {
-                origin,
-                direction: lower_left_corner + u * horizontal + v * vertical,
+            let mut col = Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0
             };
 
-            // eprintln!("{}\t{}\t{:?}", u, v, r);
-            let col = color(&r, world);
+            for _ in 0..aa_samples {
+                let u = (i as f32 + step.ind_sample(&mut rng)) / nx as f32;
+                let v = (j as f32 + step.ind_sample(&mut rng)) / ny as f32;
+
+                let r = cam.get_ray(u, v);
+
+                col = col + color(&r, world);
+            }
+
+            col = col / aa_samples as f32;
+
             let ir = (255.99 * col.x) as i32;
             let ig = (255.99 * col.y) as i32;
             let ib = (255.99 * col.z) as i32;
