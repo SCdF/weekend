@@ -84,6 +84,22 @@ fn main() {
                 },
                 radius: 0.5
             },
+            // &Sphere {
+            //     center: Vec3 {
+            //         x: -1.0,
+            //         y: -0.0,
+            //         z: -2.0
+            //     },
+            //     radius: 0.5
+            // },
+            // &Sphere {
+            //     center: Vec3 {
+            //         x:  1.0,
+            //         y: -0.0,
+            //         z: -2.0
+            //     },
+            //     radius: 0.5
+            // },
             &Sphere {
                 center: Vec3 {
                     x: 0.0,
