@@ -1,6 +1,5 @@
 
 /target/
 **/*.rs.bk
-output.ppm
 .idea/
 weekend.iml
