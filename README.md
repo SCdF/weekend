@@ -4,4 +4,4 @@ In rust.
 
 ## Progress
 
-![](./output.ppm)
+![](./output.png)

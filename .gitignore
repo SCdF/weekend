@@ -3,3 +3,4 @@
 **/*.rs.bk
 .idea/
 weekend.iml
+output.ppm
