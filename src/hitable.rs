@@ -4,7 +4,7 @@ use vec3::Vec3;
 pub struct HitRecord {
     // TODO: this is 't' in the book. Is this actually time?
     time: f32,
-    p: Vec3,
+    pub p: Vec3,
     pub normal: Vec3
 }
 

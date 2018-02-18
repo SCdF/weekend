@@ -14,14 +14,45 @@ use hitable::HitableList;
 use hitable::Sphere;
 use camera::Camera;
 
+fn random() -> f32 {
+    // TODO: work out how make these global / static
+    // we shouldn't have to re-let them every time
+    let step = Range::new(0.0, 1.0);
+    let mut rng = rand::thread_rng();
+
+    step.ind_sample(&mut rng)
+}
+
+fn random_in_unit_sphere() -> Vec3 {
+    let mut p: Vec3;
+    loop {
+        p = 2.0 * Vec3 {
+            x: random(),
+            y: random(),
+            z: random()
+        } - Vec3 {
+            x: 1.0,
+            y: 1.0,
+            z: 1.0
+        };
+
+        if p.squared_length() >= 1.0 {
+            break;
+        }
+    }
+    p
+}
+
 fn color(ray: &Ray, world: &Hitable) -> Vec3 {
     match world.hit(*ray, 0.0, std::f32::MAX) {
-        Some(rec) =>
-            0.5 * Vec3 {
-                x: rec.normal.x + 1.0,
-                y: rec.normal.y + 1.0,
-                z: rec.normal.z + 1.0,
-            },
+        Some(rec) => {
+            let target = rec.p + rec.normal + random_in_unit_sphere();
+
+            0.5 * color(&Ray {
+                origin: rec.p,
+                direction: target - rec.p
+            }, world)
+        }
         None => {
             // Sky
             let unit_direction = ray.direction.unit_vector();
@@ -111,9 +142,6 @@ fn main() {
         ]
     };
 
-    let step = Range::new(0.0, 1.0);
-    let mut rng = rand::thread_rng();
-
     for j in (0..ny).rev() {
         for i in 0..nx {
             let mut col = Vec3 {
@@ -123,8 +151,8 @@ fn main() {
             };
 
             for _ in 0..aa_samples {
-                let u = (i as f32 + step.ind_sample(&mut rng)) / nx as f32;
-                let v = (j as f32 + step.ind_sample(&mut rng)) / ny as f32;
+                let u = (i as f32 + random()) / nx as f32;
+                let v = (j as f32 + random()) / ny as f32;
 
                 let r = cam.get_ray(u, v);
 
