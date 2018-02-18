@@ -1,58 +1,39 @@
-use vec3::Vec3;
-use ray::Ray;
 mod vec3;
 mod ray;
+mod hitable;
 
-fn hit_sphere(center: Vec3, radius: f32, r: &Ray) -> f32 {
-    let oc = r.origin - center;
-    let a = Vec3::dot(&r.direction, &r.direction);
-    let b = 2.0 * Vec3::dot(&oc, &r.direction);
-    let c = Vec3::dot(&oc, &oc) - (radius * radius);
-    let discriminant = b * b - 4.0 * a * c;
+use vec3::Vec3;
+use ray::Ray;
+use hitable::Hitable;
+use hitable::HitableList;
+use hitable::Sphere;
 
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-b - discriminant.sqrt()) / (2.0 * a)
-    }
-}
+fn color(ray: &Ray, world: &Hitable) -> Vec3 {
+    match world.hit(*ray, 0.0, std::f32::MAX) {
+        Some(rec) =>
+            0.5 * Vec3 {
+                x: rec.normal.x + 1.0,
+                y: rec.normal.y + 1.0,
+                z: rec.normal.z + 1.0,
+            },
+        None => {
+            // Sky
+            let unit_direction = ray.direction.unit_vector();
+            let t = 0.5 * (unit_direction.y + 1.0);
 
-fn color(ray: &Ray) -> Vec3 {
-    let sphere_loc = Vec3 {
-        x: 0.0,
-        y: 0.0,
-        z: -1.0,
-    };
-    let sphere_radius = 0.5;
+            let white = Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 1.0,
+            };
+            let blue = Vec3 {
+                x: 0.5,
+                y: 0.7,
+                z: 1.0,
+            };
 
-    let t = hit_sphere(sphere_loc, sphere_radius, ray);
-
-    if t > 0.0 {
-        let normal = Vec3::unit_vector(&(ray.point_at_parameter(t) - sphere_loc));
-        let normal_color = Vec3 {
-            x: normal.x + 1.0,
-            y: normal.y + 1.0,
-            z: normal.z + 1.0
-        };
-
-        0.5 * normal_color
-    } else {
-        // Sky
-        let unit_direction = ray.direction.unit_vector();
-        let t = 0.5 * (unit_direction.y + 1.0);
-
-        let white = Vec3 {
-            x: 1.0,
-            y: 1.0,
-            z: 1.0,
-        };
-        let blue = Vec3 {
-            x: 0.5,
-            y: 0.7,
-            z: 1.0,
-        };
-
-        (1.0 - t) * white + t * blue
+            (1.0 - t) * white + t * blue
+        }
     }
 }
 
@@ -80,6 +61,28 @@ fn main() {
         y: 0.0,
         z: 0.0,
     };
+
+    let world = &HitableList {
+        list: vec![
+            &Sphere {
+                center: Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: -1.0
+                },
+                radius: 0.5
+            },
+            &Sphere {
+                center: Vec3 {
+                    x: 0.0,
+                    y: -100.5,
+                    z: -1.0
+                },
+                radius: 100.0
+            }
+        ]
+    };
+
     for j in (0..ny).rev() {
         for i in 0..nx {
             let u = i as f32 / nx as f32;
@@ -88,8 +91,9 @@ fn main() {
                 origin,
                 direction: lower_left_corner + u * horizontal + v * vertical,
             };
+
             // eprintln!("{}\t{}\t{:?}", u, v, r);
-            let col = color(&r);
+            let col = color(&r, world);
             let ir = (255.99 * col.x) as i32;
             let ig = (255.99 * col.y) as i32;
             let ib = (255.99 * col.z) as i32;
