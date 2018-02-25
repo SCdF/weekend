@@ -5,7 +5,7 @@ mod ray;
 mod hitable;
 mod camera;
 
-use rand::distributions::{IndependentSample, Range};
+use rand::Rng;
 
 use vec3::Vec3;
 use ray::Ray;
@@ -15,12 +15,7 @@ use hitable::Sphere;
 use camera::Camera;
 
 fn random() -> f32 {
-    // TODO: work out how make these global / static
-    // we shouldn't have to re-let them every time
-    let step = Range::new(0.0, 1.0);
-    let mut rng = rand::thread_rng();
-
-    step.ind_sample(&mut rng)
+    rand::thread_rng().gen_range(0.0, 1.0)
 }
 
 fn random_in_unit_sphere() -> Vec3 {
