@@ -1,4 +1,3 @@
-// TODO: convert to f64 because why not
 use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Debug, Copy, Clone)]
