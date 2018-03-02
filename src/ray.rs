@@ -6,8 +6,13 @@ pub struct Ray {
     pub direction: Vec3,
 }
 
-#[allow(dead_code)]
 impl Ray {
+    pub fn new(origin: Vec3, direction: Vec3) -> Ray {
+        Ray {
+            origin: origin,
+            direction: direction
+        }
+    }
     pub fn point_at_parameter(&self, t: f32) -> Vec3 {
         let nv = self.origin + t * self.direction;
         Vec3 {

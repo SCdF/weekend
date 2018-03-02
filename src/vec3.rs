@@ -10,10 +10,10 @@ pub struct Vec3 {
     pub z: f32,
 }
 
-// TODO: work out the difference between Vec3 and &Vec3: when would I want to use
-// one over the other, how should I re-write this code to use those properly
-#[allow(dead_code)]
 impl Vec3 {
+    pub fn new(x: f32, y: f32, z: f32) -> Vec3 {
+        Vec3 { x: x, y: y, z: z }
+    }
     // TODO: read about dot product
     pub fn dot(v1: &Vec3, v2: &Vec3) -> f32 {
         (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z)
