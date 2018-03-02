@@ -6,6 +6,8 @@ mod hitable;
 mod camera;
 
 use rand::Rng;
+use std::thread;
+use std::sync::mpsc;
 
 use vec3::Vec3;
 use ray::Ray;
@@ -65,41 +67,54 @@ fn main() {
         origin: Vec3::new(0.0, 0.0, 0.0)
     };
 
-    let ball = &Sphere {
+    let ball = Sphere {
         center: Vec3::new(0.0, 0.0, -1.0),
         radius: 0.5
     };
-    let globe = &Sphere {
+    let globe = Sphere {
         center: Vec3::new(0.0, -100.5, -1.0),
         radius: 100.0
     };
 
-    let world = &HitableList {
-        list: vec![ball, globe]
-    };
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        // TODO: define this externally to the thread
+        let world = HitableList {
+            list: vec![&ball, &globe]
+        };
+        for j in (0..ny).rev() {
+            for i in 0..nx {
+                let mut col = Vec3::new(0.0, 0.0, 0.0);
 
-    for j in (0..ny).rev() {
-        for i in 0..nx {
-            let mut col = Vec3::new(0.0, 0.0, 0.0);
+                for _ in 0..aa_samples {
+                    let u = (i as f32 + random()) / nx as f32;
+                    let v = (j as f32 + random()) / ny as f32;
 
-            for _ in 0..aa_samples {
-                let u = (i as f32 + random()) / nx as f32;
-                let v = (j as f32 + random()) / ny as f32;
+                    let r = cam.get_ray(u, v);
 
-                let r = cam.get_ray(u, v);
+                    col = col + color(&r, &world);
+                }
 
-                col = col + color(&r, world);
+                col = col / aa_samples as f32;
+
+                // Gamma 2
+                col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
+
+                let ir = (255.99 * col.x) as i32;
+                let ig = (255.99 * col.y) as i32;
+                let ib = (255.99 * col.z) as i32;
+                tx.send((j, i, ir, ig, ib)).unwrap();
+                // println!("{} {} {}\n", ir, ig, ib);
             }
-
-            col = col / aa_samples as f32;
-
-            // Gamma 2
-            col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
-
-            let ir = (255.99 * col.x) as i32;
-            let ig = (255.99 * col.y) as i32;
-            let ib = (255.99 * col.z) as i32;
-            println!("{} {} {}\n", ir, ig, ib);
         }
+    });
+
+    let mut results = vec!((128,128,128); ny * nx);
+    for (j, i, ir, ig, ib) in rx {
+        results[((ny - j - 1) * nx) + i] = (ir, ig, ib);
+    }
+
+    for (_, data) in results.iter().enumerate() {
+           println!("{} {} {}\n", data.0, data.1, data.2);
     }
 }
