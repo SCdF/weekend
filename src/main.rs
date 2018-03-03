@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate crossbeam_utils;
 
 mod vec3;
 mod ray;
@@ -6,8 +7,6 @@ mod hitable;
 mod camera;
 
 use rand::Rng;
-use std::thread;
-use std::sync::mpsc;
 
 use vec3::Vec3;
 use ray::Ray;
@@ -53,9 +52,41 @@ fn color(ray: &Ray, world: &Hitable) -> Vec3 {
     }
 }
 
+fn xy_from_i(max_x: usize, max_y: usize, i: usize) -> (usize, usize) {
+    let y = max_y - (i / max_x) as usize;
+    let x = i % max_x;
+    (x, y)
+}
+
+fn render(t1a: &mut [(i32, i32, i32)], offset: usize, nx: usize, ny: usize, aa_samples: usize, cam: &Camera, world: &HitableList) {
+    for idx in 0..t1a.len() {
+        let mut col = Vec3::new(0.0, 0.0, 0.0);
+        let (x, y) = xy_from_i(nx, ny, offset + idx);
+
+        for _ in 0..aa_samples {
+            let u = (x as f32 + random()) / nx as f32;
+            let v = (y as f32 + random()) / ny as f32;
+
+            let r = cam.get_ray(u, v);
+
+            col = col + color(&r, world);
+        }
+
+        col = col / aa_samples as f32;
+
+        // Gamma 2
+        col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
+
+        let ir = (255.99 * col.x) as i32;
+        let ig = (255.99 * col.y) as i32;
+        let ib = (255.99 * col.z) as i32;
+        t1a[idx] = (ir, ig, ib);
+    }
+}
+
 fn main() {
-    let nx = 400;
-    let ny = 200;
+    let nx = 800;
+    let ny = 400;
     let aa_samples = 100;
 
     println!("P3\n{} {} \n255\n", nx, ny);
@@ -76,42 +107,46 @@ fn main() {
         radius: 100.0
     };
 
-    let (tx, rx) = mpsc::channel();
-    thread::spawn(move || {
-        // TODO: define this externally to the thread
-        let world = HitableList {
-            list: vec![&ball, &globe]
-        };
-        for j in (0..ny).rev() {
-            for i in 0..nx {
-                let mut col = Vec3::new(0.0, 0.0, 0.0);
+    let mut results = vec!((255, 0, 255); ny * nx);
+    {
+        let length = ny * nx;
+        let (t1a, t3a) = results.split_at_mut(length / 2);
+        let (t1a, t2a) = t1a.split_at_mut(length / 4);
+        let (t3a, t4a) = t3a.split_at_mut(length / 4);
+        crossbeam_utils::scoped::scope(|scope| {
+            let t1 = scope.spawn(|| {
+                let world = HitableList {
+                    list: vec![&ball, &globe]
+                };
 
-                for _ in 0..aa_samples {
-                    let u = (i as f32 + random()) / nx as f32;
-                    let v = (j as f32 + random()) / ny as f32;
+                render(t1a, (length / 4) * 0, nx, ny, aa_samples, &cam, &world);
+            });
+            let t2 = scope.spawn(|| {
+                let world = HitableList {
+                    list: vec![&ball, &globe]
+                };
 
-                    let r = cam.get_ray(u, v);
+                render(t2a, (length / 4) * 1, nx, ny, aa_samples, &cam, &world);
+            });
+            let t3 = scope.spawn(|| {
+                let world = HitableList {
+                    list: vec![&ball, &globe]
+                };
 
-                    col = col + color(&r, &world);
-                }
+                render(t3a, (length / 4) * 2, nx, ny, aa_samples, &cam, &world);
+            });
+            let t4 = scope.spawn(|| {
+                let world = HitableList {
+                    list: vec![&ball, &globe]
+                };
 
-                col = col / aa_samples as f32;
-
-                // Gamma 2
-                col = Vec3::new(col.x.sqrt(), col.y.sqrt(), col.z.sqrt());
-
-                let ir = (255.99 * col.x) as i32;
-                let ig = (255.99 * col.y) as i32;
-                let ib = (255.99 * col.z) as i32;
-                tx.send((j, i, ir, ig, ib)).unwrap();
-                // println!("{} {} {}\n", ir, ig, ib);
-            }
-        }
-    });
-
-    let mut results = vec!((128,128,128); ny * nx);
-    for (j, i, ir, ig, ib) in rx {
-        results[((ny - j - 1) * nx) + i] = (ir, ig, ib);
+                render(t4a, (length / 4) * 3, nx, ny, aa_samples, &cam, &world);
+            });
+            t1.join();
+            t2.join();
+            t3.join();
+            t4.join();
+        });
     }
 
     for (_, data) in results.iter().enumerate() {

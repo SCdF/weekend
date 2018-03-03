@@ -1,6 +1,7 @@
 use vec3::Vec3;
 use ray::Ray;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Camera {
     pub lower_left_corner: Vec3,
     pub horizontal: Vec3,
