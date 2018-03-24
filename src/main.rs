@@ -1,12 +1,12 @@
-extern crate rand;
 extern crate crossbeam_utils;
+extern crate rand;
 
-mod vec3;
-mod ray;
-mod hitable;
 mod camera;
-
-use rand::Rng;
+mod hitable;
+mod material;
+mod random;
+mod ray;
+mod vec3;
 
 use vec3::Vec3;
 use ray::Ray;
@@ -14,41 +14,29 @@ use hitable::Hitable;
 use hitable::HitableList;
 use hitable::Sphere;
 use camera::Camera;
+use random::random;
+use material::{Lambertian, Metal};
 
-fn random() -> f32 {
-    rand::thread_rng().gen_range(0.0, 1.0)
-}
-
-fn random_in_unit_sphere() -> Vec3 {
-    let mut p: Vec3;
-    loop {
-        p = 2.0 * Vec3::new(random(), random(), random()) -
-                  Vec3::new(1.0, 1.0, 1.0);
-
-        if p.squared_length() >= 1.0 {
-            break;
+fn color(ray: &Ray, world: &Hitable, depth: u32) -> Vec3 {
+    if let Some(rec) = world.hit(*ray, 0.001, std::f32::MAX) {
+        if depth < 50 {
+            if let Some(scat) = rec.material.scatter(&ray, &rec) {
+                *scat.attenuation * color(&scat.scattered, world, depth + 1)
+            } else {
+                Vec3::new(0.0, 0.0, 0.0)
+            }
+        } else {
+            Vec3::new(0.0, 0.0, 0.0)
         }
-    }
-    p
-}
+    } else {
+        // Sky
+        let unit_direction = ray.direction.unit_vector();
+        let t = 0.5 * (unit_direction.y + 1.0);
 
-fn color(ray: &Ray, world: &Hitable) -> Vec3 {
-    match world.hit(*ray, 0.001, std::f32::MAX) {
-        Some(rec) => {
-            let target = rec.p + rec.normal + random_in_unit_sphere();
+        let white = Vec3::new(1.0, 1.0, 1.0);
+        let blue = Vec3::new(0.5, 0.7, 1.0);
 
-            0.5 * color(&Ray::new(rec.p, target - rec.p), world)
-        }
-        None => {
-            // Sky
-            let unit_direction = ray.direction.unit_vector();
-            let t = 0.5 * (unit_direction.y + 1.0);
-
-            let white = Vec3::new(1.0, 1.0, 1.0);
-            let blue = Vec3::new(0.5, 0.7, 1.0);
-
-            (1.0 - t) * white + t * blue
-        }
+        (1.0 - t) * white + t * blue
     }
 }
 
@@ -69,7 +57,7 @@ fn render(t1a: &mut [(i32, i32, i32)], offset: usize, nx: usize, ny: usize, aa_s
 
             let r = cam.get_ray(u, v);
 
-            col = col + color(&r, world);
+            col = col + color(&r, world, 0);
         }
 
         col = col / aa_samples as f32;
@@ -81,6 +69,35 @@ fn render(t1a: &mut [(i32, i32, i32)], offset: usize, nx: usize, ny: usize, aa_s
         let ig = (255.99 * col.y) as i32;
         let ib = (255.99 * col.z) as i32;
         t1a[idx] = (ir, ig, ib);
+    }
+}
+
+// TODO: work out how we don't have to call this a billion times
+fn world() -> HitableList {
+    let ball = Sphere {
+        center: Vec3::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.3, 0.3) })
+    };
+    let globe = Sphere {
+        center: Vec3::new(0.0, -100.5, -1.0),
+        radius: 100.0,
+        material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.8, 0.0) })
+    };
+    let metal1 = Sphere {
+        center: Vec3::new(1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Box::new(Metal { albedo: Vec3::new(0.8, 0.6, 0.2)})
+    };
+    let metal2 = Sphere {
+        center: Vec3::new(-1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Box::new(Metal { albedo: Vec3::new(0.8, 0.8, 0.8)})
+    };
+    HitableList {
+        list: vec![
+            Box::new(globe), Box::new(ball), Box::new(metal1), Box::new(metal2)
+        ]
     }
 }
 
@@ -98,14 +115,7 @@ fn main() {
         origin: Vec3::new(0.0, 0.0, 0.0)
     };
 
-    let ball = Sphere {
-        center: Vec3::new(0.0, 0.0, -1.0),
-        radius: 0.5
-    };
-    let globe = Sphere {
-        center: Vec3::new(0.0, -100.5, -1.0),
-        radius: 100.0
-    };
+
 
     let mut results = vec!((255, 0, 255); ny * nx);
     {
@@ -115,30 +125,22 @@ fn main() {
         let (t3a, t4a) = t3a.split_at_mut(length / 4);
         crossbeam_utils::scoped::scope(|scope| {
             let t1 = scope.spawn(|| {
-                let world = HitableList {
-                    list: vec![&ball, &globe]
-                };
+                let world = world();
 
                 render(t1a, (length / 4) * 0, nx, ny, aa_samples, &cam, &world);
             });
             let t2 = scope.spawn(|| {
-                let world = HitableList {
-                    list: vec![&ball, &globe]
-                };
+                let world = world();
 
                 render(t2a, (length / 4) * 1, nx, ny, aa_samples, &cam, &world);
             });
             let t3 = scope.spawn(|| {
-                let world = HitableList {
-                    list: vec![&ball, &globe]
-                };
+                let world = world();
 
                 render(t3a, (length / 4) * 2, nx, ny, aa_samples, &cam, &world);
             });
             let t4 = scope.spawn(|| {
-                let world = HitableList {
-                    list: vec![&ball, &globe]
-                };
+                let world = world();
 
                 render(t4a, (length / 4) * 3, nx, ny, aa_samples, &cam, &world);
             });

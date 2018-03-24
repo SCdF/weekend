@@ -1,35 +1,34 @@
 use ray::Ray;
 use vec3::Vec3;
+use material::*;
 
 pub struct HitRecord {
-    // TODO: this is 't' in the book. Is this actually time?
-    time: f32,
+    t: f32,
     pub p: Vec3,
-    pub normal: Vec3
+    pub normal: Vec3,
+    pub material: Box<Material>
 }
 
 pub trait Hitable {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
-pub struct HitableList<'a> {
-    pub list: Vec<&'a Hitable>
+pub struct HitableList {
+    pub list: Vec<Box<Hitable>>
 }
 
-impl<'a> Hitable for HitableList<'a> {
+impl Hitable for HitableList {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut best: Option<HitRecord> = None;
         let mut closest_so_far = t_max;
 
+        // TODO: look into converting this into a fold
         for hitable in self.list.iter() {
-            match hitable.hit(r, t_min, closest_so_far) {
-                Some(hit) => {
-                    closest_so_far = hit.time;
-                    // TODO: can we get a reference to the wrapping object so
-                    // we don't have to create another one?
-                    best = Some(hit);
-                }
-                _ => ()
+            if let Some(hit) = hitable.hit(r, t_min, closest_so_far) {
+                closest_so_far = hit.t;
+                // TODO: can we get a reference to the wrapping object so
+                // we don't have to create another one?
+                best = Some(hit);
             }
         }
 
@@ -37,10 +36,10 @@ impl<'a> Hitable for HitableList<'a> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
 pub struct Sphere {
     pub center: Vec3,
-    pub radius: f32
+    pub radius: f32,
+    pub material: Box<Material>
 }
 
 impl Hitable for Sphere {
@@ -58,9 +57,10 @@ impl Hitable for Sphere {
                 let p = r.point_at_parameter(temp);
 
                 return Some(HitRecord {
-                    time: temp,
+                    t: temp,
                     p: p,
-                    normal: (p - self.center) / self.radius
+                    normal: (p - self.center) / self.radius,
+                    material: self.material.box_clone()
                 })
             }
 
@@ -69,9 +69,10 @@ impl Hitable for Sphere {
                 let p = r.point_at_parameter(temp2);
 
                 return Some(HitRecord {
-                    time: temp2,
+                    t: temp2,
                     p: p,
-                    normal: (p - self.center) / self.radius
+                    normal: (p - self.center) / self.radius,
+                    material: self.material.box_clone()
                 })
             }
 
