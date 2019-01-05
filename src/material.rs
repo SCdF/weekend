@@ -13,32 +13,32 @@ pub struct Scatter<'a> {
     pub scattered: Ray,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Lambertian {
     pub albedo: Vec3
 }
 impl Material for Lambertian {
     fn scatter(&self, _r_in: &Ray, hit_record: &HitRecord) -> Option<Scatter> {
-        let target = hit_record.p + hit_record.normal + random_in_unit_sphere();
+        let target = &hit_record.p + &hit_record.normal + random_in_unit_sphere();
 
         Some(
             Scatter {
                 attenuation: &self.albedo,
                 scattered: Ray {
-                    origin: hit_record.p,
-                    direction: target - hit_record.p
+                    origin: Vec3::clone(&hit_record.p),
+                    direction: &target - &hit_record.p
                 }
             }
         )
     }
     fn box_clone(&self) -> Box<Material> {
         Box::new(Lambertian {
-            ..*self
+            albedo: Vec3::clone(&self.albedo)
         })
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct Metal {
     pub albedo: Vec3
 }
@@ -47,7 +47,7 @@ impl Material for Metal {
         let reflected = reflect(&r_in.direction.unit_vector(), &hit_record.normal);
 
         let scattered = Ray {
-            origin: hit_record.p,
+            origin: Vec3::clone(&hit_record.p),
             direction: reflected
         };
 
@@ -64,10 +64,10 @@ impl Material for Metal {
     }
     fn box_clone(&self) -> Box<Material> {
         Box::new(Metal {
-            ..*self
+            albedo: Vec3::clone(&self.albedo)
         })
     }
 }
 fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
-    *v - 2.0 * Vec3::dot(v, n) * *n
+    v - &(2.0 * Vec3::dot(v, n) * n)
 }

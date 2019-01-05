@@ -10,7 +10,7 @@ pub struct HitRecord {
 }
 
 pub trait Hitable {
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
 pub struct HitableList {
@@ -18,7 +18,7 @@ pub struct HitableList {
 }
 
 impl Hitable for HitableList {
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut best: Option<HitRecord> = None;
         let mut closest_so_far = t_max;
 
@@ -43,8 +43,8 @@ pub struct Sphere {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let oc = r.origin - self.center;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let oc = &r.origin - &self.center;
         let a = Vec3::dot(&r.direction, &r.direction);
         let b = Vec3::dot(&oc, &r.direction);
         let c = Vec3::dot(&oc, &oc) - (self.radius * self.radius);
@@ -55,11 +55,12 @@ impl Hitable for Sphere {
             let temp = (-b - (b * b - a * c).sqrt()) / a;
             if temp < t_max && temp > t_min {
                 let p = r.point_at_parameter(temp);
+                let normal = (&p - &self.center) / self.radius;
 
                 return Some(HitRecord {
                     t: temp,
                     p: p,
-                    normal: (p - self.center) / self.radius,
+                    normal: normal,
                     material: self.material.box_clone()
                 })
             }
@@ -67,11 +68,12 @@ impl Hitable for Sphere {
             let temp2 = (-b - (b * b + a * c).sqrt()) / a;
             if temp2 < t_max && temp2 > t_min {
                 let p = r.point_at_parameter(temp2);
+                let normal = (&p - &self.center) / self.radius;
 
                 return Some(HitRecord {
                     t: temp2,
                     p: p,
-                    normal: (p - self.center) / self.radius,
+                    normal: normal,
                     material: self.material.box_clone()
                 })
             }

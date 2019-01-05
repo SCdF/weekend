@@ -18,10 +18,10 @@ use random::random;
 use material::{Lambertian, Metal};
 
 fn color(ray: &Ray, world: &Hitable, depth: u32) -> Vec3 {
-    if let Some(rec) = world.hit(*ray, 0.001, std::f32::MAX) {
+    if let Some(rec) = world.hit(ray, 0.001, std::f32::MAX) {
         if depth < 50 {
             if let Some(scat) = rec.material.scatter(&ray, &rec) {
-                *scat.attenuation * color(&scat.scattered, world, depth + 1)
+                &color(&scat.scattered, world, depth + 1) * scat.attenuation
             } else {
                 Vec3::new(0.0, 0.0, 0.0)
             }
